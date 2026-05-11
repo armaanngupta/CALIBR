@@ -42,68 +42,6 @@ function typewrite() {
 }
 setTimeout(typewrite, 900);
 
-/* ---- AUTO-SCROLL (continuous, loop to top at bottom) ---- */
-const AUTOSCROLL_STEP = 2;          // px per tick
-const AUTOSCROLL_INTERVAL = 16;     // ms per tick (~60fps)
-const AUTOSCROLL_RESUME_MS = 3000;  // pause duration after user input
-
-let autoScrollPaused = false;
-let autoScrollResumeTimer = null;
-let autoScrollSuppressEvents = false;
-
-function setScrollTopInstant(y) {
-  // Bypass CSS scroll-behavior:smooth by writing the scroll position directly.
-  const html = document.documentElement;
-  const prev = html.style.scrollBehavior;
-  html.style.scrollBehavior = 'auto';
-  autoScrollSuppressEvents = true;
-  html.scrollTop = y;
-  document.body.scrollTop = y;
-  html.style.scrollBehavior = prev;
-  // Allow the synthetic scroll event to flush before re-enabling user-input detection.
-  requestAnimationFrame(() => { autoScrollSuppressEvents = false; });
-}
-
-function autoScrollTick() {
-  if (autoScrollPaused) return;
-  const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  if (maxScroll <= 0) return;
-  if (scrollTop >= maxScroll - 1) {
-    setScrollTopInstant(0);
-  } else {
-    autoScrollSuppressEvents = true;
-    window.scrollBy(0, AUTOSCROLL_STEP);
-    requestAnimationFrame(() => { autoScrollSuppressEvents = false; });
-  }
-}
-
-function pauseAutoScroll() {
-  if (autoScrollSuppressEvents) return;
-  autoScrollPaused = true;
-  clearTimeout(autoScrollResumeTimer);
-  autoScrollResumeTimer = setTimeout(() => {
-    autoScrollPaused = false;
-  }, AUTOSCROLL_RESUME_MS);
-}
-
-window.addEventListener('wheel', pauseAutoScroll, { passive: true });
-window.addEventListener('touchstart', pauseAutoScroll, { passive: true });
-window.addEventListener('mousemove', pauseAutoScroll, { passive: true });
-window.addEventListener('keydown', (e) => {
-  if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) {
-    pauseAutoScroll();
-  }
-});
-
-function clearAutoScroll() {
-  pauseAutoScroll();
-}
-
-setTimeout(() => {
-  setInterval(autoScrollTick, AUTOSCROLL_INTERVAL);
-}, 1500);
-
 /* ---- SCROLL REVEAL — IntersectionObserver ---- */
 function setupReveal(selector, threshold = 0.15) {
   const els = document.querySelectorAll(selector);
@@ -199,8 +137,6 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     const target = document.querySelector(a.getAttribute('href'));
     if (target) {
       e.preventDefault();
-      userScrolled = true;
-      clearAutoScroll();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       // Close mobile menu if open
       const linksEl = document.querySelector('.nav-links');
